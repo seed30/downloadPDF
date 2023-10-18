@@ -1,0 +1,82 @@
+import requests
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
+
+# 设置 Chrome WebDriver 的选项
+options = Options()
+# options.add_argument("--headless")  # 如果你想在无界面模式下运行，取消注释此行
+options.add_argument("--disable-gpu")
+options.add_argument("--no-sandbox")
+options.add_argument('--ignore-certificate-errors')
+
+
+# 首先获取页面的pdf的链接
+def get_pdf_link(url):
+    # 启动 Chrome WebDriver
+    driver = webdriver.Chrome(options=options)
+    # 打开包含 PDF 文件链接的网页
+    driver.get(url)
+    # 找到按钮并点击
+    download_button = driver.find_element(By.LINK_TEXT, 'Download PDF')
+    download_button.click()
+
+    # 获取当前窗口的句柄
+    current_window_handle = driver.current_window_handle
+
+    # 切换到新打开的窗口
+    driver.switch_to.window(driver.window_handles[-1])
+
+    # 获取当前页面的 URL
+    pdf_url = driver.current_url
+    print(f"PDF 链接：{pdf_url}")
+    return pdf_url
+
+    # 关闭新打开的窗口
+    driver.close()
+
+    # 切换回原始窗口
+    driver.switch_to.window(current_window_handle)
+
+    # 关闭浏览器
+    driver.quit()
+
+    # 输出 PDF 链接
+    print(f"PDF 链接：{pdf_url}")
+    return pdf_url
+
+# 然后根据pdf的链接下载并保存pdf
+
+
+def download_pdf(pdf_url, pdf_name):
+    # 启动 Chrome WebDriver
+    driver = webdriver.Chrome(options=options)
+
+    # 打开包含 PDF 文件链接的网页
+    # driver.get("https://redirect.cs.umbc.edu/courses/471/papers/turing.pdf")
+    driver.get(pdf_url)
+
+    # 获取当前页面的 URL
+    current_url = driver.current_url
+
+    # 使用 requests 库下载 PDF 文件
+    response = requests.get(current_url)
+    filename = pdf_name  # 下载后保存的文件名
+
+    # 将下载的 PDF 文件保存到本地
+    with open(filename, "wb") as file:
+        file.write(response.content)
+
+    # 关闭浏览器
+    driver.quit()
+
+
+if __name__ == "__main__":
+    url = "https://arxiv.org/abs/2301.00170"
+    pdf_url = get_pdf_link(url)
+    pdf_name = "output2.pdf"
+    download_pdf(pdf_url, pdf_name)
